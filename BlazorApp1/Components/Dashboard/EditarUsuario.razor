@@ -1,0 +1,352 @@
+@page "/dashboard/usuarios/editar/{id:int}"
+@using System.Security.Claims
+@using BlazorApp1.Components.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Editar Usuario - Sistema de Tarimas</PageTitle>
+
+<FormHeader Title="Editar Usuario" Icon="fa-user-edit" OnLogout="Logout" />
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card p-4">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">Editar Información de Usuario</h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @GetErrorMessage()
+                        </div>
+                    }
+
+                    @if (successMessage)
+                    {
+                        <div class="alert alert-success" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            ¡La información del usuario ha sido actualizada exitosamente!
+                        </div>
+                    }
+
+                    @if (usuario != null)
+                    {
+                        <EditForm Model="usuario" OnValidSubmit="HandleUpdate">
+                            <DataAnnotationsValidator />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="firstName" class="form-label">Nombre</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <InputText id="firstName" class="form-control"
+                                                       @bind-Value="usuario.FirstName" />
+                                        </div>
+                                        <ValidationMessage For="@(() => usuario.FirstName)" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="lastName" class="form-label">Apellido</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <InputText id="lastName" class="form-control" @bind-Value="usuario.LastName" />
+                                        </div>
+                                        <ValidationMessage For="@(() => usuario.LastName)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <InputText id="email" class="form-control" type="email" @bind-Value="usuario.Email" />
+                                </div>
+                                <ValidationMessage For="@(() => usuario.Email)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nombre de Usuario</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <InputText id="username" class="form-control" @bind-Value="usuario.Username" />
+                                </div>
+                                <ValidationMessage For="@(() => usuario.Username)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="legajo" class="form-label">Número de Legajo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                    <InputText id="legajo" class="form-control" @bind-Value="usuario.Legajo" />
+                                </div>
+                                <ValidationMessage For="@(() => usuario.Legajo)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="department" class="form-label">Departamento</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                    <InputSelect id="department" class="form-select" @bind-Value="usuario.Department">
+                                        <option value="ventas">Ventas</option>
+                                        <option value="inventario">Inventario</option>
+                                        <option value="logistica">Logística</option>
+                                        <option value="administracion">Administración</option>
+                                        <option value="produccion">Producción</option>
+                                        <option value="calidad">Control de Calidad</option>
+                                    </InputSelect>
+                                </div>
+                                <ValidationMessage For="@(() => usuario.Department)" />
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="idRol" class="form-label">Rol de Usuario</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                        <InputSelect id="idRol" class="form-select" @bind-Value="usuario.RoleId">
+                                            <option value="2">Producción (Acceso limitado)</option>
+                                            <option value="3">Jefe de Producción (Gestión de tarimas)</option>
+                                            <option value="1">Administrador (Acceso completo)</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <div class="form-check mb-3 w-100">
+                                        <InputCheckbox id="activo" class="form-check-input"
+                                                       @bind-Value="usuario.IsActive" />
+                                        <label class="form-check-label" for="activo">Usuario Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                                        <div class="input-group position-relative">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <InputText id="newPassword" class="form-control" type="@passwordType"
+                                                       @bind-Value="usuario.NewPassword"
+                                                       placeholder="Dejar en blanco para mantener actual" />
+                                            <button type="button"
+                                                    class="password-toggle position-absolute end-0 top-50 translate-middle-y pe-3 border-0 bg-transparent"
+                                                    style="cursor: pointer; z-index: 5;" @onclick="TogglePassword"
+                                                    aria-label="Mostrar/Ocultar contraseña">
+                                                <i class="@toggleIconClass"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                                        <div class="input-group position-relative">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <InputText id="confirmPassword" class="form-control" type="@confirmPasswordType"
+                                                       @bind-Value="usuario.ConfirmPassword"
+                                                       placeholder="Dejar en blanco para mantener actual"
+                                                       @oninput="CheckPasswordMatch" />
+                                            <button type="button"
+                                                    class="password-toggle position-absolute end-0 top-50 translate-middle-y pe-3 border-0 bg-transparent"
+                                                    style="cursor: pointer; z-index: 5;" @onclick="ToggleConfirmPassword"
+                                                    aria-label="Mostrar/Ocultar confirmación de contraseña">
+                                                <i class="@confirmToggleIconClass"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(passwordMatchMessage))
+                            {
+                                <div class="mb-0 p-0 @passwordMatchClass" style="display: block;">
+                                    <div class="alert p-2 @passwordMatchClass" role="alert">
+                                        <i class="fas @passwordMatchIcon me-2"></i>
+                                        @passwordMatchMessage
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="d-flex justify-content-between">
+                                <a href="/dashboard/usuarios" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a Usuarios
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Actualizar Usuario
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Usuario no encontrado.
+                        </div>
+                        <a href="/dashboard/usuarios" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Usuarios
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private UsuarioViewModel? usuario;
+    private string errorMessage = "";
+    private bool successMessage = false;
+
+    private bool showPassword = false;
+    private bool showConfirmPassword = false;
+    private string passwordType = "password";
+    private string confirmPasswordType = "password";
+    private string toggleIconClass = "fas fa-eye-slash";
+    private string confirmToggleIconClass = "fas fa-eye-slash";
+
+    private string passwordMatchMessage = "";
+    private string passwordMatchClass = "alert-info alert-danger";
+    private string passwordMatchIcon = "fa-info-circle";
+
+    private string GetErrorMessage()
+    {
+        return errorMessage switch
+        {
+            "empty_fields" => "Por favor, complete todos los campos obligatorios.",
+            "invalid_email" => "Por favor, ingrese un email válido.",
+            "user_exists" => "El nombre de usuario o email ya están registrados.",
+            "update_failed" => "Error al actualizar la información del usuario.",
+            "empty_password_fields" => "Para cambiar la contraseña, debe completar ambos campos.",
+            "password_mismatch" => "Las contraseñas no coinciden.",
+            "weak_password" => "La contraseña debe tener al menos 6 caracteres.",
+            _ => "Error al actualizar el usuario."
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true || !user.IsInRole("administrador"))
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        // TODO: Cargar usuario real desde un servicio
+        // usuario = await UserService.GetByIdAsync(Id);
+
+        // Datos de ejemplo
+        usuario = new UsuarioViewModel
+        {
+            Id = Id,
+            FirstName = "Juan",
+            LastName = "Perez",
+            Email = "juan@ejemplo.com",
+            Username = "juan.perez",
+            Legajo = "1002",
+            Department = "produccion",
+            RoleId = "2",
+            IsActive = true
+        };
+    }
+
+    private void TogglePassword()
+    {
+        showPassword = !showPassword;
+        passwordType = showPassword ? "text" : "password";
+        toggleIconClass = showPassword ? "fas fa-eye" : "fas fa-eye-slash";
+    }
+
+    private void ToggleConfirmPassword()
+    {
+        showConfirmPassword = !showConfirmPassword;
+        confirmPasswordType = showConfirmPassword ? "text" : "password";
+        confirmToggleIconClass = showConfirmPassword ? "fas fa-eye" : "fas fa-eye-slash";
+    }
+
+    private void CheckPasswordMatch()
+    {
+        if (!string.IsNullOrEmpty(usuario?.ConfirmPassword))
+        {
+            if (usuario.NewPassword == usuario.ConfirmPassword)
+            {
+                passwordMatchMessage = "Las contraseñas coinciden";
+                passwordMatchClass = "alert-success";
+                passwordMatchIcon = "fa-check-circle";
+            }
+            else
+            {
+                passwordMatchMessage = "Las contraseñas no coinciden";
+                passwordMatchClass = "alert-danger";
+                passwordMatchIcon = "fa-times-circle";
+            }
+        }
+        else
+        {
+            passwordMatchMessage = "";
+        }
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (!string.IsNullOrEmpty(usuario.NewPassword) && usuario.NewPassword != usuario.ConfirmPassword)
+        {
+            errorMessage = "password_mismatch";
+            return;
+        }
+
+        // TODO: Implementar actualización real
+        await Task.Delay(500);
+
+        successMessage = true;
+    }
+
+    private async Task Logout()
+    {
+        Navigation.NavigateTo("/auth/login", forceLoad: true);
+    }
+
+    public class UsuarioViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "El nombre es requerido")]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "El apellido es requerido")]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "El email es requerido")]
+        [EmailAddress(ErrorMessage = "Email inválido")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "El nombre de usuario es requerido")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "El legajo es requerido")]
+        public string Legajo { get; set; } = "";
+
+        [Required(ErrorMessage = "El departamento es requerido")]
+        public string Department { get; set; } = "";
+
+        public string RoleId { get; set; } = "2";
+        public bool IsActive { get; set; } = true;
+
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+        public string NewPassword { get; set; } = "";
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

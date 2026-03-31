@@ -1,0 +1,324 @@
+@page "/auth/register"
+@using System.Security.Claims
+@using BlazorApp1.Components.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Registro - Sistema de Tarimas</PageTitle>
+
+<FormHeader Title="Sistema de Inventario" Icon="fa-cubes" OnLogout="Logout" />
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card p-4">
+                <div class="card-header text-success text-center">
+                    <h3 class="mb-0">Crear Cuenta</h3>
+                </div>
+                <div class="card-body">
+                    @if (successMessage)
+                    {
+                        <div class="alert alert-success" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            ¡Su cuenta ha sido creada exitosamente! Puede iniciar sesión ahora.
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @GetErrorMessage()
+                        </div>
+                    }
+
+                    <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="firstName" class="form-label">Nombre</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        <InputText id="firstName" class="form-control"
+                                                   @bind-Value="registerModel.FirstName" />
+                                    </div>
+                                    <ValidationMessage For="@(() => registerModel.FirstName)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lastName" class="form-label">Apellido</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        <InputText id="lastName" class="form-control"
+                                                   @bind-Value="registerModel.LastName" />
+                                    </div>
+                                    <ValidationMessage For="@(() => registerModel.LastName)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <InputText id="email" class="form-control" type="email"
+                                           @bind-Value="registerModel.Email" />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nombre de Usuario</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <InputText id="username" class="form-control" @bind-Value="registerModel.Username" />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Username)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="legajo" class="form-label">Número de Legajo</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                <InputText id="legajo" class="form-control" @bind-Value="registerModel.Legajo" />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Legajo)" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Contraseña</label>
+                                    <div class="input-group position-relative">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <InputText id="password" class="form-control" type="@passwordType"
+                                                   @bind-Value="registerModel.Password" />
+                                        <button type="button"
+                                                class="password-toggle position-absolute end-0 top-50 translate-middle-y pe-3 border-0 bg-transparent"
+                                                style="cursor: pointer; z-index: 5;"
+                                                aria-label="Mostrar/Ocultar contraseña">
+                                            <i id="passwordToggle" class="@toggleIconClass"></i>
+                                        </button>
+                                    </div>
+                                    <ValidationMessage For="@(() => registerModel.Password)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+                                    <div class="input-group position-relative">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <InputText id="confirmPassword" class="form-control" type="@confirmPasswordType"
+                                                   @bind-Value="registerModel.ConfirmPassword" @oninput="CheckPasswordMatch" />
+                                        <button type="button"
+                                                class="password-toggle position-absolute end-0 top-50 translate-middle-y pe-3 border-0 bg-transparent"
+                                                style="cursor: pointer; z-index: 5;"
+                                                aria-label="Mostrar/Ocultar confirmación de contraseña">
+                                            <i id="confirmPasswordToggle" class="@confirmToggleIconClass"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(passwordMatchMessage))
+                        {
+                            <div class="mb-0 p-0 @passwordMatchClass" style="display: block;">
+                                <div class="alert p-2 @passwordMatchClass" role="alert">
+                                    <i class="fas @passwordMatchIcon me-2"></i>
+                                    @passwordMatchMessage
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Departamento</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                <InputSelect id="department" class="form-select" @bind-Value="registerModel.Department">
+                                    <option value="" selected disabled>Seleccione Departamento</option>
+                                    <option value="ventas">Ventas</option>
+                                    <option value="inventario">Inventario</option>
+                                    <option value="logistica">Logística</option>
+                                    <option value="administracion">Administración</option>
+                                    <option value="produccion">Producción</option>
+                                    <option value="calidad">Control de Calidad</option>
+                                </InputSelect>
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Department)" />
+                        </div>
+
+                        @if (isAdmin)
+                        {
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="idRol" class="form-label">Rol de Usuario</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                        <InputSelect id="idRol" class="form-select" @bind-Value="registerModel.RoleId">
+                                            <option value="2" selected>Producción (Acceso limitado)</option>
+                                            <option value="3">Jefe de Producción (Gestión de tarimas)</option>
+                                            <option value="1">Administrador (Acceso completo)</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col d-flex align-items-end">
+                                    <div class="form-check mb-3 w-100">
+                                        <InputCheckbox id="activo" class="form-check-input"
+                                                       @bind-Value="registerModel.IsActive" />
+                                        <label class="form-check-label" for="activo">Usuario Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex gap-2">
+                            <a href="/dashboard" class="btn btn-secondary w-100">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                            </a>
+                            <button type="submit" class="btn btn-success w-100">Registrarse</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+    private string errorMessage = "";
+    private bool successMessage = false;
+    private bool isAdmin = false;
+
+    private bool showPassword = false;
+    private bool showConfirmPassword = false;
+    private string passwordType = "password";
+    private string confirmPasswordType = "password";
+    private string toggleIconClass = "fas fa-eye-slash";
+    private string confirmToggleIconClass = "fas fa-eye-slash";
+
+    private string passwordMatchMessage = "";
+    private string passwordMatchClass = "alert-info alert-danger";
+    private string passwordMatchIcon = "fa-info-circle";
+
+    private string GetErrorMessage()
+    {
+        return errorMessage switch
+        {
+            "empty_fields" => "Por favor, complete todos los campos.",
+            "password_mismatch" => "Las contraseñas no coinciden. Por favor, inténtelo de nuevo.",
+            "invalid_email" => "Por favor, ingrese un email válido.",
+            "user_exists" => "El nombre de usuario o email ya están registrados.",
+            "registration_failed" => "Error al registrar la cuenta. Por favor, inténtelo de nuevo.",
+            _ => "Error al registrar la cuenta."
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            isAdmin = user.IsInRole("administrador");
+        }
+    }
+
+    private void TogglePassword(string field)
+    {
+        if (field == "password")
+        {
+            showPassword = !showPassword;
+            passwordType = showPassword ? "text" : "password";
+            toggleIconClass = showPassword ? "fas fa-eye" : "fas fa-eye-slash";
+        }
+        else
+        {
+            showConfirmPassword = !showConfirmPassword;
+            confirmPasswordType = showConfirmPassword ? "text" : "password";
+            confirmToggleIconClass = showConfirmPassword ? "fas fa-eye" : "fas fa-eye-slash";
+        }
+    }
+
+    private void CheckPasswordMatch()
+    {
+        if (!string.IsNullOrEmpty(registerModel.ConfirmPassword))
+        {
+            if (registerModel.Password == registerModel.ConfirmPassword)
+            {
+                passwordMatchMessage = "Las contraseñas coinciden";
+                passwordMatchClass = "alert-success";
+                passwordMatchIcon = "fa-check-circle";
+            }
+            else
+            {
+                passwordMatchMessage = "Las contraseñas no coinciden";
+                passwordMatchClass = "alert-danger";
+                passwordMatchIcon = "fa-times-circle";
+            }
+        }
+        else
+        {
+            passwordMatchMessage = "";
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            errorMessage = "password_mismatch";
+            return;
+        }
+
+        // TODO: Implementar lógica de registro real
+        await Task.Delay(500);
+
+        successMessage = true;
+        Navigation.NavigateTo("/auth/login");
+    }
+
+    private async Task Logout()
+    {
+        Navigation.NavigateTo("/auth/login", forceLoad: true);
+    }
+
+    public class RegisterModel
+    {
+        [Required(ErrorMessage = "El nombre es requerido")]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "El apellido es requerido")]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "El email es requerido")]
+        [EmailAddress(ErrorMessage = "Email inválido")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "El nombre de usuario es requerido")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "El legajo es requerido")]
+        public string Legajo { get; set; } = "";
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+        public string Password { get; set; } = "";
+
+        public string ConfirmPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "El departamento es requerido")]
+        public string Department { get; set; } = "";
+
+        public string RoleId { get; set; } = "2";
+        public bool IsActive { get; set; } = true;
+    }
+}

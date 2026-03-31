@@ -1,0 +1,152 @@
+@page "/dashboard/usuarios"
+@using System.Security.Claims
+@using BlazorApp1.Components.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Usuarios - Sistema de Tarimas</PageTitle>
+
+<FormHeader Title="Usuarios del Sistema" Icon="fa-users" OnLogout="Logout" />
+
+<div class="container my-5">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Lista de Usuarios</h3>
+            <div>
+                <a href="/auth/register" class="btn btn-light me-2">
+                    <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+                </a>
+                <a href="/dashboard" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre de Usuario</th>
+                            <th>Email</th>
+                            <th>Nombre Completo</th>
+                            <th>Legajo</th>
+                            <th>Departamento</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Fecha de Registro</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (usuarios.Any())
+                        {
+                            @foreach (var usuario in usuarios)
+                            {
+                                <tr>
+                                    <td>@usuario.Id</td>
+                                    <td>@usuario.Username</td>
+                                    <td>@usuario.Email</td>
+                                    <td>@usuario.FullName</td>
+                                    <td>@usuario.Legajo</td>
+                                    <td>@usuario.Department</td>
+                                    <td>
+                                        <span class="badge @GetRoleBadgeClass(usuario.Role)">
+                                            @usuario.Role
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (usuario.IsActive)
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        }
+                                    </td>
+                                    <td>@usuario.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <a href="/dashboard/usuarios/editar/@usuario.Id" class="btn btn-sm btn-outline-primary"
+                                               title="Editar usuario">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">No hay usuarios registrados aún.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<UsuarioViewModel> usuarios = new();
+    private bool isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true || !user.IsInRole("administrador"))
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        isAdmin = true;
+
+        // TODO: Cargar usuarios reales desde un servicio
+        // usuarios = await UserService.GetAllAsync();
+
+        // Datos de ejemplo
+        usuarios = new List<UsuarioViewModel>
+        {
+            new UsuarioViewModel { Id = 1, Username = "admin", Email = "admin@ejemplo.com", FullName = "Administrador Sistema",
+Legajo = "1001", Department = "administracion", Role = "administrador", IsActive = true, CreatedAt =
+DateTime.Now.AddDays(-30) },
+            new UsuarioViewModel { Id = 2, Username = "juan.perez", Email = "juan@ejemplo.com", FullName = "Juan Perez", Legajo =
+"1002", Department = "produccion", Role = "produccion", IsActive = true, CreatedAt = DateTime.Now.AddDays(-15) },
+            new UsuarioViewModel { Id = 3, Username = "maria.gomez", Email = "maria@ejemplo.com", FullName = "Maria Gomez", Legajo =
+"1003", Department = "ventas", Role = "jefe_produccion", IsActive = true, CreatedAt = DateTime.Now.AddDays(-7) },
+        };
+    }
+
+    private string GetRoleBadgeClass(string role)
+    {
+        return role switch
+        {
+            "administrador" => "bg-danger",
+            "jefe_produccion" => "bg-warning text-dark",
+            _ => "bg-success"
+        };
+    }
+
+    private async Task Logout()
+    {
+        Navigation.NavigateTo("/auth/login", forceLoad: true);
+    }
+
+    public class UsuarioViewModel
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string FullName { get; set; } = "";
+        public string Legajo { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string Role { get; set; } = "";
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

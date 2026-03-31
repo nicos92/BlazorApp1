@@ -1,0 +1,125 @@
+@page "/auth/login"
+@using System.Security.Claims
+@using BlazorApp1.Components.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Iniciar Sesión - Sistema de Tarimas</PageTitle>
+
+<FormHeader Title="Sistema de Inventario" Icon="fa-cubes" OnLogout="Logout" />
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card p-4">
+                <div class="card-header text-center">
+                    <h3 class="mb-0 text-dark">Iniciar Sesión</h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @GetErrorMessage()
+                        </div>
+                    }
+
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nombre de Usuario</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <InputText id="username" class="form-control" @bind-Value="loginModel.Username" />
+                            </div>
+                            <ValidationMessage For="@(() => loginModel.Username)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <div class="input-group position-relative">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <InputText id="password" class="form-control" type="@passwordType"
+                                           @bind-Value="loginModel.Password" />
+                                <button type="button"
+                                        class="password-toggle position-absolute end-0 top-50 translate-middle-y pe-3 border-0 bg-transparent"
+                                        style="cursor: pointer; z-index: 5;" @onclick="TogglePassword">
+                                    <i class="@toggleIconClass"></i>
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => loginModel.Password)" />
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox id="remember" class="form-check-input" @bind-Value="loginModel.RememberMe" />
+                            <label class="form-check-label" for="remember">Recordarme</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+                        <p class="mb-0">¿No tienes cuenta? <a href="/auth/register">Regístrate aquí</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage = "";
+    private bool showPassword = false;
+    private string passwordType = "password";
+    private string toggleIconClass = "fas fa-eye-slash";
+
+    private string GetErrorMessage()
+    {
+        return errorMessage switch
+        {
+            "invalid_credentials" => "Credenciales incorrectas. Por favor, verifique su nombre de usuario y contraseña.",
+            "empty_fields" => "Por favor, complete todos los campos.",
+            "inactive_user" => "El usuario está inactivo. Por favor, contacte con el administrador.",
+            _ => "Error al iniciar sesión."
+        };
+    }
+
+    private void TogglePassword()
+    {
+        showPassword = !showPassword;
+        passwordType = showPassword ? "text" : "password";
+        toggleIconClass = showPassword ? "fas fa-eye" : "fas fa-eye-slash";
+    }
+
+    private async Task HandleLogin()
+    {
+        // TODO: Implementar lógica de autenticación real
+        // Ejemplo: var result = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+
+        // Simulación para demostración
+        await Task.Delay(500);
+
+        // Redirigir al dashboard
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    private async Task Logout()
+    {
+        // TODO: Implementar lógica de logout
+        Navigation.NavigateTo("/auth/login", forceLoad: true);
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "El nombre de usuario es requerido")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+}

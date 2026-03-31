@@ -26,6 +26,26 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Auth/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBdXRoXExvZ2luLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Auth/Register.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBdXRoXFJlZ2lzdGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Dashboard/EditarUsuario.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xEYXNoYm9hcmRcRWRpdGFyVXN1YXJpby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Dashboard/Index.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xEYXNoYm9hcmRcSW5kZXgucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Dashboard/Usuarios.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xEYXNoYm9hcmRcVXN1YXJpb3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -54,6 +74,30 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Shared/AppFooter.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcQXBwRm9vdGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Shared/FormHeader.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcRm9ybUhlYWRlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Shared/MainHeader.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcTWFpbkhlYWRlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Tarimas/EditarTarima.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xUYXJpbWFzXEVkaXRhclRhcmltYS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Tarimas/ListarTarimas.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xUYXJpbWFzXExpc3RhclRhcmltYXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Tarimas/NuevaTarima.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xUYXJpbWFzXE51ZXZhVGFyaW1hLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xfSW1wb3J0cy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -69,3 +113,7 @@ build_metadata.AdditionalFiles.CssScope = b-5bndfk4shp
 [C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Layout/ReconnectModal.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcUmVjb25uZWN0TW9kYWwucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-rp7b9a9cad
+
+[C:/Users/nicos92/Documents/blazor/BlazorApp1/BlazorApp1/Components/Pages/Dashboard.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xEYXNoYm9hcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-iaqv7fwdyb
