@@ -1,0 +1,76 @@
+﻿@page "/bienvenida"
+
+<PageTitle>Bienvenida</PageTitle>
+<h1>Bienvenidos </h1>
+<p class="lead">Hoy es: @DateTime.Now</p>
+
+<h3 class="display-6">Diferencias entre @@page y @@layout</h3>
+<p>Las directivas <strong>@@page</strong> y <strong>@@layout</strong> cumplen funciones distintas pero complementarias dentro del desarrollo con Razor y Blazor, relacionadas con la navegación y la estructura visual respectivamente.<br>Aquí se detallan sus diferencias principales:</p>
+<ol>
+	<li>
+		<p><strong>La directiva @@page (Enrutamiento)</strong><br>Su función principal es el enrutamiento del lado del cliente. Define cómo se accede a un componente a través del navegador</p>
+	</li>
+</ol>
+<ul>
+	<li>
+		<p>Propósito: Define la ruta o URL de un componente para que este sea tratado como una "página" accesible directamente</p>
+	</li>
+	<li>
+		<p>Uso: Si quieres que un componente se muestre al navegar a una dirección específica (por ejemplo, /contador), debes incluir @@page "/contador" en la parte superior del archivo</p>
+	</li>
+	<li>
+		<p>Flexibilidad: Un solo componente puede tener múltiples directivas @@page para responder a diferentes rutas, y estas rutas pueden incluir parámetros (como /usuario/{Id}).</p>
+	</li>
+</ul>
+<ol>
+	<li><strong>La directiva @@layout (Estructura Visual)</strong><br>Su función es definir el entorno visual o plantilla que envolverá al componente de página.<br>Propósito: Se utiliza para asignar un diseño específico a un componente de página, permitiendo que este herede una estructura común (como menús laterales y barras superiores)</li>
+</ol>
+<ul>
+	<li>Relación con @@page: Esta directiva solo funciona en componentes que tienen definida una ruta mediante @@page</li>
+	<li>Jerarquía: Aunque el sistema suele tener un diseño predeterminado (configurado generalmente en el componente Routes o App), la directiva @@layout permite sobrescribir ese diseño para una página en particular.</li>
+</ul>
+<h3 class="atx" id="resumen-de-diferencias">Resumen de diferencias</h3>
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th scope="col">#</th>
+			<th scope="col">Característica</th>
+			<th scope="col">@@page</th>
+			<th scope="col">@@layout</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td scope="row">1</td>
+			<td>Función</td>
+			<td>Define la dirección URL del componente</td>
+			<td>Define la plantilla visual del componente</td>
+		</tr>
+		<tr>
+			<td scope="row">2</td>
+			<td>Efecto</td>
+			<td>Hace que el componente sea enrutable</td>
+			<td>Organiza el contenido visual alrededor del componente</td>
+		</tr>
+		<tr>
+			<td scope="row">3</td>
+
+			<td>Cantidad</td>
+			<td>Puede haber varias en un mismo archivo</td>
+			<td>Generalmente se especifica una para cambiar el diseño base</td>
+		</tr>
+		<tr>
+			<td scope="row">4</td>
+
+			<td>Dependencia</td>
+			<td>Independiente</td>
+			<td>Requiere que el componente tenga un @@page para funcionar</td>
+		</tr>
+	</tbody>
+</table>
+<p class="lead">En resumen, mientras que @@page le dice a Blazor dónde encontrar el componente en la web, @@layout le indica dentro de qué marco visual debe renderizarlo.</p>
+
+
+@code {
+
+}
