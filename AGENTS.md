@@ -5,16 +5,19 @@
 ## Build & Run Commands
 
 ```bash
-# Build
+# Build the solution
 dotnet build
 
-# Run in development (http)
+# Build specific project
+dotnet build BlazorApp1/BlazorApp1.csproj
+
+# Run in development (http://localhost:5000)
 dotnet run --project BlazorApp1
 
-# Run with HTTPS
+# Run with HTTPS (https://localhost:5001)
 dotnet run --project BlazorApp1 --launch-profile https
 
-# Watch mode
+# Watch mode (auto-reload on changes)
 dotnet watch --project BlazorApp1
 
 # Release build
@@ -22,6 +25,9 @@ dotnet build --configuration Release
 ```
 
 ## Testing
+
+> **Note:** No test project exists yet. Create one using:
+> `dotnet new xunit -n BlazorApp1.Tests`
 
 ```bash
 # Run all tests
@@ -33,7 +39,7 @@ dotnet test BlazorApp1.Tests
 # Run specific test method
 dotnet test --filter "FullyQualifiedName~TestMethodName"
 
-# Run without building
+# Run tests without building
 dotnet test --no-build
 ```
 
@@ -45,15 +51,18 @@ dotnet test --no-build
 | Razor Components | kebab-case | `NuevaTarima.razor` |
 | C# Files | PascalCase | `TarimaService.cs` |
 | Routes/URLs | kebab-case | `/tarimas/nueva_tarima` |
+| Properties/Methods | PascalCase | `CantidadCajas`, `HandleSubmit()` |
+| Private fields | camelCase with `_` prefix | `_errorMessage`, `_isLoading` |
 
 ### C# Conventions
 - **Implicit usings**: Enabled
 - **Nullable**: Enabled (`string?` syntax preferred)
-- **Properties**: PascalCase
-- **Fields**: camelCase with `private` modifier
-- **Accessibility**: Always specify
+- **Accessibility**: Always specify (private, public, etc.)
+- **File-scoped namespaces**: Required
 
 ```csharp
+namespace BlazorApp1.Components.Tarimas;
+
 public class TarimaModel
 {
     public string CodigoBarras { get; set; } = "";
@@ -70,45 +79,54 @@ public class TarimaModel
 @page "/route-path"
 @using BlazorApp1.Components.Shared
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Page Title</PageTitle>
 
 <!-- Markup -->
 
 @code {
-    // Private fields first
     private string? errorMessage;
 
-    // Parameters
     [Parameter] public string? ItemId { get; set; }
 
-    // Inject dependencies
     [Inject] private IMyService? MyService { get; set; }
 
-    // Lifecycle
     protected override async Task OnInitializedAsync() { }
 
-    // Private methods
     private void HandleClick() { }
 
-    // Nested classes
     public class MyModel { }
 }
 ```
 
 ### Razor Guidelines
-- **PascalCase** for component names and attributes
-- **camelCase** for event handlers (`@onclick`, `@bind-Value`)
-- **kebab-case** for CSS classes
+- **PascalCase** for component names and attributes (`<PageTitle>`, `@bind-Value`)
+- **camelCase** for event handlers (`@onclick`, `@oninput`)
+- **kebab-case** for CSS classes (`class="form-control"`)
 - Prefer `@bind-Value` for two-way binding
+- Use `@Assets[]` for static asset references in .NET 10
+
+```razor
+@* Static asset reference *@
+<link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
+
+@* Event handler binding *@
+<button @onclick="HandleClick">Click me</button>
+
+@* Two-way binding *@
+<InputText @bind-Value="model.CodigoBarras" class="form-control" />
+```
 
 ### Global Imports (`Components/_Imports.razor`)
 ```razor
 @using System.Net.Http
+@using System.Net.Http.Json
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
 @using BlazorApp1
 @using BlazorApp1.Components
 @using BlazorApp1.Components.Layout
@@ -122,7 +140,7 @@ public class TarimaModel
     [StringLength(30)]
     public string CodigoBarras { get; set; } = "";
 
-    [Range(1, 999)]
+    [Range(1, 999, ErrorMessage = "Debe ser entre 1 y 999")]
     public int CantidadCajas { get; set; }
 }
 ```
@@ -131,8 +149,14 @@ public class TarimaModel
 ```razor
 <EditForm Model="model" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
-    <InputText @bind-Value="model.CodigoBarras" class="form-control" />
-    <ValidationMessage For="@(() => model.CodigoBarras)" />
+    <div class="mb-3">
+        <label class="form-label">Código de Barras</label>
+        <InputText @bind-Value="model.CodigoBarras" class="form-control" />
+        <ValidationMessage For="@(() => model.CodigoBarras)" />
+    </div>
+    <button type="submit" class="btn btn-primary" disabled="@isLoading">
+        @(isLoading ? "Guardando..." : "Guardar")
+    </button>
 </EditForm>
 ```
 
@@ -143,10 +167,12 @@ private async Task HandleSubmit()
     try
     {
         isLoading = true;
+        // await service.CallAsync();
     }
     catch (Exception ex)
     {
-        errorMessage = "Error al procesar";
+        errorMessage = "Error al procesar la solicitud";
+        Console.Error.WriteLine(ex);
     }
     finally
     {
@@ -157,46 +183,45 @@ private async Task HandleSubmit()
 
 ### Navigation
 ```csharp
-// With page reload
-Navigation.NavigateTo("/path", forceLoad: true);
-
-// SPA style
-Navigation.NavigateTo("/path");
-```
-
-### Authentication
-```csharp
-var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-var user = authState.User;
-bool isAdmin = user.IsInRole("administrador") || user.IsInRole("jefe_produccion");
+Navigation.NavigateTo("/path", forceLoad: true);  // Full page reload
+Navigation.NavigateTo("/path");                   // SPA navigation
 ```
 
 ## Project Structure
 
 ```
-BlazorApp1/BlazorApp1/
-├── Components/
-│   ├── _Imports.razor         # Global usings
-│   ├── App.razor              # HTML shell
-│   ├── Layout/                # Layout components
-│   ├── Pages/                 # Route pages
-│   ├── Shared/                # Reusable components
-│   ├── Tarimas/               # Feature: Tarimas
-│   ├── Dashboard/             # Feature: Dashboard
-│   └── Auth/                  # Feature: Auth
-├── Program.cs
-└── wwwroot/
+BlazorApp1/
+├── BlazorApp1.sln
+├── BlazorApp1/
+│   ├── BlazorApp1.csproj
+│   ├── Program.cs
+│   ├── Components/
+│   │   ├── _Imports.razor
+│   │   ├── App.razor
+│   │   ├── Layout/
+│   │   │   └── NavMenu.razor
+│   │   ├── Pages/
+│   │   │   ├── Home.razor
+│   │   │   └── Inicio.razor
+│   │   └── Shared/
+│   │       └── ResourcePreloader.razor
+│   ├── wwwroot/
+│   │   ├── css/
+│   │   │   └── tarimas.css
+│   │   └── lib/
+│   └── appsettings.json
+└── AGENTS.md
 ```
 
 ## Important Notes
 
 1. **No code-behind files** - Use `@code` blocks within .razor files
-2. **ViewModels as nested classes** - Simple models defined within components
+2. **Nested models** - Simple models can be defined within components
 3. **Spanish UI** - All user-facing text in Spanish
 4. **Spanish date formats** - dd/MM/yyyy, `,` as decimal separator
-5. **TODO comments** - Many services are stubs
+5. **No authentication** - This is a basic Blazor Server app without auth
+6. **No tests** - Test project needs to be created
 
-## Skills & References
-- **ABP Patterns**: `.agents/skills/abp-blazor/SKILL.md`
+## External References
 - **Bootstrap 5**: https://getbootstrap.com/docs/5.3/
 - **FontAwesome 6**: https://fontawesome.com/docs
