@@ -173,3 +173,4 @@ F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\refint\BlazorApp1.dll
 F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.pdb
 F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.genruntimeconfig.cache
 F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\ref\BlazorApp1.dll
+C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.sourcelink.json

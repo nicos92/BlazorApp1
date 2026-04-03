@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@rendermode InteractiveServer
 
 <PageTitle>Nueva Tarima - Sistema de Tarimas</PageTitle>
 
@@ -59,10 +60,12 @@
 
                     <div class="input-group has-validation mb-3">
                         <span class="input-group-text"><i class="fas fa-barcode"></i></span>
-                        <InputNumber id="codigoBarras" class="form-control" @bind-Value="tarimaModel.CodigoBarrasLong"
-                                     placeholder="Código de Barras" @oninput="OnCodigoBarrasChanged" />
+                        <input type="text" maxlength="30" id="codigoBarras" class="form-control"
+                               value="@tarimaModel.CodigoBarrasLong" placeholder="Código de Barras"
+                               @oninput="OnCodigoBarrasChanged" />
                         <ValidationMessage For="@(() => tarimaModel.CodigoBarras)" />
                     </div>
+                    <p>Codigo Uno: @codigouno</p>
 
                     <div class="row">
                         <div class="col-md-6">
@@ -143,22 +146,24 @@
 </div>
 
 @code {
-    private TarimaModel tarimaModel = new();
+    private TarimaModel tarimaModel = new TarimaModel();
     private string? error;
     private bool success = false;
 
+    private string codigouno = string.Empty;
     private void DismissAlert()
     {
         error = null;
         success = false;
     }
 
-    private void OnCodigoBarrasChanged()
+    private void OnCodigoBarrasChanged(ChangeEventArgs e)
     {
-        var value = tarimaModel.CodigoBarras;
 
+        var value = e.Value?.ToString() ?? string.Empty;
+        codigouno = value.Length.ToString();
         // Limitar a 30 dígitos
-        if (value.Length > 30)
+        if (value.Length >= 30)
         {
             value = value.Substring(0, 30);
             tarimaModel.CodigoBarras = value;
@@ -210,6 +215,8 @@
             // Establecer número de venta con año actual
             var currentYear = DateTime.Now.Year.ToString().Substring(2);
             tarimaModel.NumeroVenta = $"{currentYear}-";
+
+
         }
     }
 
