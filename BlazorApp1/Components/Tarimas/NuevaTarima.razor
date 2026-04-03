@@ -1,20 +1,20 @@
 @page "/tarimas/nueva_tarima"
-@using System.Security.Claims
 @using BlazorApp1.Components.Shared
-@using Microsoft.AspNetCore.Components.Authorization
-@using System.ComponentModel.DataAnnotations
+@using BlazorApp1.Models
+@using BlazorApp1.Services
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IBarcodeParserService BarcodeParser
+@inject ITarimaValidatorService TarimaValidator
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Nueva Tarima - Sistema de Tarimas</PageTitle>
 
 <div class="container my-5">
-    @if (error == "required_fields_missing")
+    @if (error != null)
     {
         <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>Los campos código de barras y número de tarima son obligatorios.
+            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
             <button type="button" class="btn-close" @onclick="DismissAlert" aria-label="Close"></button>
         </div>
     }
@@ -28,15 +28,6 @@
                 {
                     <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
                         <i class="fas fa-check-circle me-2"></i>¡Tarima registrada correctamente!
-                        <button type="button" class="btn-close" @onclick="DismissAlert" aria-label="Close"></button>
-                    </div>
-                }
-
-                @if (error == "duplicate_tarima")
-                {
-                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Ya existe una tarima registrada con este código de barras en la misma fecha.
                         <button type="button" class="btn-close" @onclick="DismissAlert" aria-label="Close"></button>
                     </div>
                 }
@@ -150,28 +141,28 @@
 </div>
 
 @code {
-    private TarimaModel tarimaModel = new TarimaModel();
+    private TarimaModel tarimaModel = new();
     private string? error;
+    private string? errorMessage;
     private bool success = false;
     private string? codigoBarrasError;
     private ElementReference codigoBarrasInput;
     private ElementReference numeroVentaInput;
 
-    private string codigouno = string.Empty;
-    private bool codigoBarrasAutocompletado = false;
+    private bool barcodeAutocompleted = false;
     private bool isFormReady = false;
     private string numeroVentaValue = "";
 
     private void DismissAlert()
     {
         error = null;
+        errorMessage = null;
         success = false;
     }
 
     private async Task OnCodigoBarrasChanged(ChangeEventArgs e)
     {
         var value = e.Value?.ToString() ?? string.Empty;
-        codigouno = value.Length.ToString();
 
         if (value.Length >= 30)
         {
@@ -181,60 +172,47 @@
 
         if (value.Length == 30)
         {
+            var validationError = BarcodeParserService.GetValidationError(value);
+            
+            if (validationError != null)
+            {
+                codigoBarrasError = validationError;
+                barcodeAutocompleted = false;
+                isFormReady = false;
+                StateHasChanged();
+                return;
+            }
+
+            var parseResult = BarcodeParser.Parse(value);
+            
+            if (!parseResult.IsValid)
+            {
+                codigoBarrasError = parseResult.ErrorMessage;
+                barcodeAutocompleted = false;
+                isFormReady = false;
+                StateHasChanged();
+                return;
+            }
+
             codigoBarrasError = null;
-
-            if (value[0] != '0')
-            {
-                codigoBarrasError = "El código de barras debe iniciar con cero.";
-                codigoBarrasAutocompletado = false;
-                isFormReady = false;
-                StateHasChanged();
-                return;
-            }
-
-            if (value.Substring(13, 4) != "9998")
-            {
-                codigoBarrasError = "Las posiciones 14-17 del código de barras deben ser 9998.";
-                codigoBarrasAutocompletado = false;
-                isFormReady = false;
-                StateHasChanged();
-                return;
-            }
-
-            var numeroProducto = value.Substring(1, 6);
-            tarimaModel.NumeroProducto = numeroProducto;
-
-            var numeroTarima = value.Substring(7, 6);
-            tarimaModel.NumeroTarima = numeroTarima;
-
-            var numeroUsuario = value.Substring(19, 2);
-            tarimaModel.NumeroUsuario = numeroUsuario;
-
-            var cantidadCajas = value.Substring(21, 3);
-            if (int.TryParse(cantidadCajas, out int cajas))
-            {
-                tarimaModel.CantidadCajas = cajas;
-            }
-
-            var pesoStr = value.Substring(24, 6);
-            if (decimal.TryParse(pesoStr, out decimal peso))
-            {
-                tarimaModel.Peso = peso / 100;
-            }
-
-            var currentYear = DateTime.Now.Year.ToString().Substring(2);
-            numeroVentaValue = $"{currentYear}-";
+            tarimaModel.NumeroProducto = parseResult.NumeroProducto;
+            tarimaModel.NumeroTarima = parseResult.NumeroTarima;
+            tarimaModel.NumeroUsuario = parseResult.NumeroUsuario;
+            tarimaModel.CantidadCajas = parseResult.CantidadCajas;
+            tarimaModel.Peso = parseResult.Peso;
+            
+            numeroVentaValue = parseResult.NumeroVentaPrefijo;
             tarimaModel.NumeroVenta = numeroVentaValue;
 
-            codigoBarrasAutocompletado = true;
-            isFormReady = true;
+            barcodeAutocompleted = true;
+            isFormReady = false;
             StateHasChanged();
             await numeroVentaInput.FocusAsync();
         }
         else
         {
             codigoBarrasError = null;
-            codigoBarrasAutocompletado = false;
+            barcodeAutocompleted = false;
             isFormReady = false;
             numeroVentaValue = "";
             StateHasChanged();
@@ -252,60 +230,34 @@
         
         tarimaModel.NumeroVenta = numeroVentaValue;
         
-        if (codigoBarrasAutocompletado)
-        {
-            isFormReady = codigoBarrasError == null &&
-                         tarimaModel.CantidadCajas >= 1 &&
-                         tarimaModel.CantidadCajas <= 999 &&
-                         System.Text.RegularExpressions.Regex.IsMatch(numeroVentaValue, @"^\d{2}-\d{6}$");
-        }
+        isFormReady = TarimaValidator.IsFormReady(
+            barcodeAutocompleted,
+            codigoBarrasError,
+            tarimaModel.CantidadCajas,
+            numeroVentaValue);
         
         StateHasChanged();
     }
 
     private async Task HandleSubmit()
     {
-        // Validaciones adicionales
-        if (tarimaModel.CodigoBarras.Length > 30)
-        {
-            error = "required_fields_missing";
-            return;
-        }
+        var validationResult = TarimaValidator.ValidateForSubmit(tarimaModel, tarimaModel.CodigoBarras, numeroVentaValue);
 
-        if (tarimaModel.CodigoBarras.Length == 30)
+        if (!validationResult.IsValid)
         {
-            if (tarimaModel.CodigoBarras[0] != '0')
-            {
-                error = "invalid_barcode";
-                return;
-            }
-
-            if (tarimaModel.CodigoBarras.Substring(13, 4) != "9998")
-            {
-                error = "invalid_barcode";
-                return;
-            }
-        }
-
-        // Validar formato de venta
-        var ventaRegex = new System.Text.RegularExpressions.Regex(@"^\d{2}-\d{6}$");
-        if (!ventaRegex.IsMatch(numeroVentaValue))
-        {
-            error = "invalid_venta";
+            error = validationResult.ErrorCode;
+            errorMessage = validationResult.ErrorMessage;
             return;
         }
 
         tarimaModel.NumeroVenta = numeroVentaValue;
-
-        // TODO: Guardar tarima en la base de datos
-        // await TarimaService.CreateAsync(tarimaModel);
 
         await Task.Delay(500);
 
         success = true;
         tarimaModel = new TarimaModel();
         codigoBarrasError = null;
-        codigoBarrasAutocompletado = false;
+        barcodeAutocompleted = false;
         isFormReady = false;
         numeroVentaValue = "";
 
@@ -314,57 +266,5 @@
         StateHasChanged();
 
         await codigoBarrasInput.FocusAsync();
-    }
-
-    private async Task Logout()
-    {
-        Navigation.NavigateTo("/auth/login", forceLoad: true);
-    }
-
-    public class TarimaModel
-    {
-        public string CodigoBarras { get; set; } = "";
-
-        public long? CodigoBarrasLong
-        {
-            get => long.TryParse(CodigoBarras, out var result) ? result : null;
-            set => CodigoBarras = value?.ToString() ?? "";
-        }
-
-        public string NumeroProducto { get; set; } = "";
-
-        public int? NumeroProductoInt
-        {
-            get => int.TryParse(NumeroProducto, out var result) ? result : null;
-            set => NumeroProducto = value?.ToString() ?? "";
-        }
-
-        public string NumeroTarima { get; set; } = "";
-
-        public int? NumeroTarimaInt
-        {
-            get => int.TryParse(NumeroTarima, out var result) ? result : null;
-            set => NumeroTarima = value?.ToString() ?? "";
-        }
-
-        public string NumeroUsuario { get; set; } = "";
-
-        public int? NumeroUsuarioInt
-        {
-            get => int.TryParse(NumeroUsuario, out var result) ? result : null;
-            set => NumeroUsuario = value?.ToString() ?? "";
-        }
-
-        [Range(1, 999, ErrorMessage = "La cantidad debe ser entre 1 y 999")]
-        public int CantidadCajas { get; set; }
-
-        [Range(0, 9999.99, ErrorMessage = "El peso debe ser entre 0 y 9999.99")]
-        public decimal Peso { get; set; }
-
-        [Required(ErrorMessage = "El número de venta es requerido")]
-        [RegularExpression(@"^\d{2}-\d{6}$", ErrorMessage = "El formato debe ser XX-XXXXXX")]
-        public string NumeroVenta { get; set; } = "";
-
-        public string Descripcion { get; set; } = "";
     }
 }
