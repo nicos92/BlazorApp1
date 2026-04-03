@@ -1,4 +1,7 @@
+using BlazorApp1.Application.Interfaces;
+using BlazorApp1.Application.Services;
 using BlazorApp1.Components;
+using BlazorApp1.Infrastructure.Persistence;
 using BlazorApp1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Infrastructure - Repository (abstraction + implementation)
+builder.Services.AddScoped<ITarimaRepository, TarimaRepository>();
+
+// Application - Services
+builder.Services.AddScoped<ITarimaService, TarimaService>();
+
+// Presentation - Validators and Parsers
 builder.Services.AddScoped<IBarcodeParserService, BarcodeParserService>();
 builder.Services.AddScoped<ITarimaValidatorService, TarimaValidatorService>();
 

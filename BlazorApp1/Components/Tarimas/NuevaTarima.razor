@@ -1,10 +1,12 @@
 @page "/tarimas/nueva_tarima"
+@using BlazorApp1.Application.Services
 @using BlazorApp1.Components.Shared
 @using BlazorApp1.Models
 @using BlazorApp1.Services
 @inject NavigationManager Navigation
 @inject IBarcodeParserService BarcodeParser
 @inject ITarimaValidatorService TarimaValidator
+@inject ITarimaService TarimaService
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -252,7 +254,14 @@
 
         tarimaModel.NumeroVenta = numeroVentaValue;
 
-        await Task.Delay(500);
+        var saved = await TarimaService.SaveTarimaAsync(tarimaModel);
+
+        if (!saved)
+        {
+            error = "duplicate_tarima";
+            errorMessage = "Ya existe una tarima registrada con este código de barras en la misma fecha.";
+            return;
+        }
 
         success = true;
         tarimaModel = new TarimaModel();
