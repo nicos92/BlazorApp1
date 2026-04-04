@@ -8,6 +8,18 @@ public interface ITarimaService
 {
     Task<bool> SaveTarimaAsync(TarimaModel model);
     Task<IEnumerable<Tarima>> GetAllTarimasAsync();
+    Task<IEnumerable<Tarima>> GetTarimasByDateAsync(DateTime date);
+    Task<int> GetTarimasCountByDateAsync(DateTime date);
+    Task<IEnumerable<Tarima>> FilterTarimasAsync(
+        string? numeroProducto = null,
+        string? numeroTarima = null,
+        string? numeroUsuario = null,
+        string? numeroVenta = null,
+        DateTime? fechaRegistro = null,
+        string? legajo = null,
+        string? nombreUsuario = null,
+        int? cantidadCajasMin = null,
+        decimal? pesoMin = null);
 }
 
 public class TarimaService : ITarimaService
@@ -42,12 +54,53 @@ public class TarimaService : ITarimaService
             Descripcion = model.Descripcion
         };
 
-        await _repository.CreateAsync(tarima);
+        try
+        {
+            await _repository.CreateAsync(tarima);
+        }
+        catch (DuplicateCodeBarrasException)
+        {
+            return false;
+        }
         return true;
     }
 
     public async Task<IEnumerable<Tarima>> GetAllTarimasAsync()
     {
         return await _repository.GetAllAsync();
+    }
+
+    public async Task<IEnumerable<Tarima>> GetTarimasByDateAsync(DateTime date)
+    {
+        return await _repository.GetByDateAsync(date);
+    }
+
+    public async Task<int> GetTarimasCountByDateAsync(DateTime date)
+    {
+        var tarimas = await _repository.GetByDateAsync(date);
+        return tarimas.Count();
+    }
+
+    public async Task<IEnumerable<Tarima>> FilterTarimasAsync(
+        string? numeroProducto = null,
+        string? numeroTarima = null,
+        string? numeroUsuario = null,
+        string? numeroVenta = null,
+        DateTime? fechaRegistro = null,
+        string? legajo = null,
+        string? nombreUsuario = null,
+        int? cantidadCajasMin = null,
+        decimal? pesoMin = null)
+    {
+        return await _repository.FilterTarimasAsync(
+            numeroProducto,
+            numeroTarima,
+            numeroUsuario,
+            numeroVenta,
+            fechaRegistro,
+            legajo,
+            nombreUsuario,
+            cantidadCajasMin,
+            pesoMin);
     }
 }

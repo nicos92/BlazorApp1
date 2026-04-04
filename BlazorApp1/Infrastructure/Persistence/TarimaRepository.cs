@@ -13,6 +13,43 @@ public class TarimaRepository : ITarimaRepository
         return Task.FromResult<IEnumerable<Tarima>>(_tarimas.OrderByDescending(t => t.FechaCreacion));
     }
 
+    public Task<IEnumerable<Tarima>> GetByDateAsync(DateTime fecha)
+    {
+        var result = _tarimas.Where(t => t.FechaCreacion.Date == fecha.Date).OrderByDescending(t => t.FechaCreacion);
+        return Task.FromResult<IEnumerable<Tarima>>(result);
+    }
+
+    public Task<IEnumerable<Tarima>> FilterTarimasAsync(
+        string? numeroProducto = null,
+        string? numeroTarima = null,
+        string? numeroUsuario = null,
+        string? numeroVenta = null,
+        DateTime? fechaRegistro = null,
+        string? legajo = null,
+        string? nombreUsuario = null,
+        int? cantidadCajasMin = null,
+        decimal? pesoMin = null)
+    {
+        var query = _tarimas.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(numeroProducto))
+            query = query.Where(t => t.NumeroProducto.Contains(numeroProducto));
+        if (!string.IsNullOrEmpty(numeroTarima))
+            query = query.Where(t => t.NumeroTarima.Contains(numeroTarima));
+        if (!string.IsNullOrEmpty(numeroUsuario))
+            query = query.Where(t => t.NumeroUsuario.Contains(numeroUsuario));
+        if (!string.IsNullOrEmpty(numeroVenta))
+            query = query.Where(t => t.NumeroVenta.Contains(numeroVenta));
+        if (fechaRegistro.HasValue)
+            query = query.Where(t => t.FechaCreacion.Date == fechaRegistro.Value.Date);
+        if (cantidadCajasMin.HasValue)
+            query = query.Where(t => t.CantidadCajas >= cantidadCajasMin.Value);
+        if (pesoMin.HasValue)
+            query = query.Where(t => t.Peso >= pesoMin.Value);
+
+        return Task.FromResult<IEnumerable<Tarima>>(query.OrderByDescending(t => t.FechaCreacion));
+    }
+
     public Task<Tarima?> GetByIdAsync(int id)
     {
         var tarima = _tarimas.FirstOrDefault(t => t.Id == id);

@@ -1,12 +1,13 @@
 @page "/tarimas"
-@using System.Security.Claims
+@using BlazorApp1.Application.Services
 @using BlazorApp1.Components.Shared
-@using Microsoft.AspNetCore.Components.Authorization
+@using BlazorApp1.Entities
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ITarimaService TarimaService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
 
 <PageTitle>Inventario de Tarimas - Sistema de Tarimas</PageTitle>
-
 
 <div class="container my-5">
     @if (showPrintFilters)
@@ -40,15 +41,15 @@
                 }
                 @if (!string.IsNullOrEmpty(filtros.NombreUsuario))
                 {
-                    <li><strong>Nombre Usuario:</strong> @filtros.NombreUsuario</li>
+                    <li><strong>Nombre de Usuario:</strong> @filtros.NombreUsuario</li>
                 }
                 @if (filtros.CantidadCajasMin.HasValue)
                 {
-                    <li><strong>Cant. Cajas:</strong> @filtros.CantidadCajasMin</li>
+                    <li><strong>Cajas Mínimas:</strong> @filtros.CantidadCajasMin</li>
                 }
                 @if (filtros.PesoMin.HasValue)
                 {
-                    <li><strong>Peso:</strong> @filtros.PesoMin</li>
+                    <li><strong>Peso Mínimo:</strong> @filtros.PesoMin kg</li>
                 }
             </ul>
         </div>
@@ -72,7 +73,7 @@
             </div>
             <div class="mt-2 d-flex flex-wrap gap-2">
                 <span class="badge text-bg-warning">Tarimas ingresadas hoy: <strong>@tarimasHoy</strong></span>
-                <span class="badge text-bg-info">Tarimas mostradas: <strong>@tarimas.Count</strong></span>
+                <span class="badge text-bg-info">Tarimas mostradas: <strong>@tarimas.Count()</strong></span>
             </div>
         </div>
 
@@ -94,51 +95,48 @@
                         <div class="col-md-3">
                             <label for="numero_producto" class="form-label">Producto</label>
                             <InputNumber id="numero_producto" class="form-control" @bind-Value="filtros.NumeroProductoInt"
-                                         placeholder="Buscar por producto" oninput="OnFilterChanged" />
+                                         placeholder="Buscar por producto" />
                         </div>
                         <div class="col-md-3">
                             <label for="numero_tarima" class="form-label">Tarima</label>
                             <InputNumber id="numero_tarima" class="form-control" @bind-Value="filtros.NumeroTarimaInt"
-                                         placeholder="Buscar por número" oninput="OnFilterChanged" />
+                                         placeholder="Buscar por número" />
                         </div>
                         <div class="col-md-3">
                             <label for="numero_usuario" class="form-label">Usuario</label>
                             <InputNumber id="numero_usuario" class="form-control" @bind-Value="filtros.NumeroUsuarioInt"
-                                         placeholder="Buscar por usuario" oninput="OnFilterChanged" />
+                                         placeholder="Buscar por usuario" />
                         </div>
                         <div class="col-md-3">
                             <label for="numero_venta" class="form-label">Venta</label>
                             <InputText id="numero_venta" class="form-control" @bind-Value="filtros.NumeroVenta"
-                                       placeholder="Buscar por venta" oninput="OnFilterChanged" />
+                                       placeholder="Buscar por venta" />
                         </div>
                     </div>
                     <div class="row g-3 mt-2">
                         <div class="col-md-3">
                             <label for="fecha_registro" class="form-label">Fecha de Registro</label>
-                            <InputDate id="fecha_registro" class="form-control" @bind-Value="filtros.FechaRegistro"
-                                       oninput="OnFilterChanged" />
+                            <InputDate id="fecha_registro" class="form-control" @bind-Value="filtros.FechaRegistro" />
                         </div>
                         <div class="col-md-3">
                             <label for="legajo" class="form-label">Legajo</label>
-                            <InputNumber id="legajo" class="form-control" @bind-Value="filtros.LegajoInt"
-                                         placeholder="Buscar por legajo" oninput="OnFilterChanged" />
+                            <InputText id="legajo" class="form-control" @bind-Value="filtros.Legajo"
+                                       placeholder="Buscar por legajo" />
                         </div>
                         <div class="col-md-3">
-                            <label for="nombre_usuario" class="form-label">Nombre</label>
+                            <label for="nombre_usuario" class="form-label">Nombre de Usuario</label>
                             <InputText id="nombre_usuario" class="form-control" @bind-Value="filtros.NombreUsuario"
-                                       placeholder="Buscar por nombre" oninput="OnFilterChanged" />
+                                       placeholder="Buscar por nombre" />
                         </div>
                         <div class="col-md-3">
-                            <label for="cantidad_cajas_min" class="form-label">Cajas</label>
+                            <label for="cantidad_cajas_min" class="form-label">Cajas Mínimas</label>
                             <InputNumber id="cantidad_cajas_min" class="form-control" @bind-Value="filtros.CantidadCajasMin"
-                                         placeholder="Mínimo" oninput="OnFilterChanged" />
+                                         placeholder="Mínimo de cajas" />
                         </div>
-                    </div>
-                    <div class="row g-3 mt-2">
                         <div class="col-md-3">
-                            <label for="peso_min" class="form-label">Peso</label>
+                            <label for="peso_min" class="form-label">Peso Mínimo</label>
                             <InputNumber id="peso_min" class="form-control" @bind-Value="filtros.PesoMin"
-                                         placeholder="Mínimo" step="0.01" oninput="OnFilterChanged" />
+                                         placeholder="Peso mínimo (kg)" />
                         </div>
                     </div>
                     <div class="row g-3 mt-3">
@@ -149,8 +147,8 @@
                             <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarFiltros">
                                 <i class="fas fa-eraser me-2"></i>Limpiar Filtros
                             </button>
-                            <button type="button" class="btn btn-success" @onclick="VerTodas">
-                                <i class="fas fa-list me-2"></i>Ver Últimas 1000 Tarimas
+                            <button type="button" class="btn btn-success" @onclick="VerTarimasDeHoy">
+                                <i class="fas fa-calendar-day me-2"></i>Ver Tarimas de Hoy
                             </button>
                         </div>
                     </div>
@@ -169,14 +167,9 @@
                             <th>Cajas</th>
                             <th>Peso</th>
                             <th>Venta</th>
-                            <th>Legajo</th>
-                            <th>Nombre</th>
                             <th>Fecha</th>
                             <th>Descripción</th>
-                            @if (isAdmin)
-                            {
-                                <th class="no-print">Acciones</th>
-                            }
+                            <th class="no-print">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -191,129 +184,103 @@
                                     <td>@tarima.CantidadCajas</td>
                                     <td>@tarima.Peso.ToString("F2")</td>
                                     <td>@tarima.NumeroVenta</td>
-                                    <td>@(tarima.Legajo ?? "N/A")</td>
-                                    <td>@(tarima.NombreUsuario ?? "N/A")</td>
-                                    <td>@tarima.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                                    <td>@tarima.FechaCreacion.ToString("dd/MM/yyyy")</td>
                                     <td>@tarima.Descripcion</td>
-                                    @if (isAdmin)
-                                    {
-                                        <td class="no-print">
-                                            <a href="/tarimas/editar_tarima/@tarima.Id" class="btn btn-sm btn-outline-warning"
-                                                   title="Editar tarima">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </td>
-                                    }
+                                    <td class="no-print">
+                                        <a href="/tarimas/editar_tarima/@tarima.Id" class="btn btn-sm btn-outline-warning"
+                                               title="Editar tarima">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                             }
                         }
                         else
                         {
                             <tr>
-                                <td colspan="@(isAdmin ? 11 : 10)" class="text-center text-muted">No hay tarimas registradas
-                                    aún.</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                                <td colspan="9" class="text-center text-muted">No hay tarimas registradas para los filtros seleccionados.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-                <div class="d-xl-none">
-                    @if (tarimas.Any())
-                    {
-                        <div class="row g-3 p-3">
-                            @foreach (var tarima in tarimas)
-                            {
-                                <div class="col-12 col-sm-12 col-md-4 col-lg-3">
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <h5 class="card-title">
-                                                    <span class="badge bg-primary">Tarima: @tarima.NumeroTarima</span>
-                                                </h5>
-                                                @if (isAdmin)
-                                                {
-                                                    <a href="/tarimas/editar_tarima/@tarima.Id"
-                                                           class="btn btn-sm btn-outline-warning no-print" title="Editar tarima">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                }
-                                            </div>
-                                            <div class="card-text">
-                                                <p class="mb-1"><strong>Producto:</strong> @tarima.NumeroProducto</p>
-                                                <p class="mb-1"><strong>Usuario:</strong> @tarima.NumeroUsuario</p>
-                                                <p class="mb-1"><strong>Cajas:</strong> @tarima.CantidadCajas</p>
-                                                <p class="mb-1"><strong>Peso:</strong> @tarima.Peso.ToString("F2")</p>
-                                                <p class="mb-1"><strong>Venta:</strong> @tarima.NumeroVenta</p>
-                                                <p class="mb-1"><strong>Legajo:</strong> @(tarima.Legajo ?? "N/A")</p>
-                                                <p class="mb-1"><strong>Nombre:</strong> @(tarima.NombreUsuario ?? "N/A")</p>
-                                                <p class="mb-1"><strong>Fecha:</strong> @tarima.FechaRegistro.ToString("dd/MM/yyyy")
-                                                </p>
-                                                <p class="mb-1"><strong>Descripción:</strong> @tarima.Descripcion</p>
-                                            </div>
+            <div class="d-xl-none">
+                @if (tarimas.Any())
+                {
+                    <div class="row g-3 p-3">
+                        @foreach (var tarima in tarimas)
+                        {
+                            <div class="col-12 col-sm-12 col-md-4 col-lg-3">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h5 class="card-title">
+                                                <span class="badge bg-primary">Tarima: @tarima.NumeroTarima</span>
+                                            </h5>
+                                            <a href="/tarimas/editar_tarima/@tarima.Id"
+                                                       class="btn btn-sm btn-outline-warning no-print" title="Editar tarima">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                        <div class="card-text">
+                                            <p class="mb-1"><strong>Producto:</strong> @tarima.NumeroProducto</p>
+                                            <p class="mb-1"><strong>Usuario:</strong> @tarima.NumeroUsuario</p>
+                                            <p class="mb-1"><strong>Cajas:</strong> @tarima.CantidadCajas</p>
+                                            <p class="mb-1"><strong>Peso:</strong> @tarima.Peso.ToString("F2")</p>
+                                            <p class="mb-1"><strong>Venta:</strong> @tarima.NumeroVenta</p>
+                                            <p class="mb-1"><strong>Fecha:</strong> @tarima.FechaCreacion.ToString("dd/MM/yyyy")</p>
+                                            <p class="mb-1"><strong>Descripción:</strong> @tarima.Descripcion</p>
                                         </div>
                                     </div>
                                 </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="p-3">
-                            <p class="text-center text-muted">No hay tarimas registradas aún.</p>
-                        </div>
-                    }
-                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3">
+                        <p class="text-center text-muted">No hay tarimas registradas para los filtros seleccionados.</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
+</div>
 
 @code {
-    private List<TarimaViewModel> tarimas = new();
+    private IEnumerable<Tarima> tarimas = new List<Tarima>();
     private TarimaFiltros filtros = new();
     private bool showFiltros = true;
     private bool showPrintFilters = false;
     private int tarimasHoy = 0;
-    private bool isAdmin;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        isAdmin = user.Identity?.IsAuthenticated == true &&
-                  (user.IsInRole("administrador") || user.IsInRole("jefe_produccion"));
-
+        filtros.FechaRegistro = DateTime.Today;
         await CargarTarimas();
     }
 
     private async Task CargarTarimas()
     {
-        // TODO: Cargar tarimas reales desde un servicio
-        // tarimas = await TarimaService.GetAllAsync(filtros);
-
-        // Datos de ejemplo
-        tarimas = new List<TarimaViewModel>
-        {
-            new TarimaViewModel { Id = 1, NumeroProducto = "123456", NumeroTarima = "000001", NumeroUsuario = "01", CantidadCajas =
-100, Peso = 1500.50m, NumeroVenta = "25-000001", Legajo = "1001", NombreUsuario = "Juan Perez", FechaRegistro =
-DateTime.Today, Descripcion = "Tarima de prueba" },
-            new TarimaViewModel { Id = 2, NumeroProducto = "123457", NumeroTarima = "000002", NumeroUsuario = "02", CantidadCajas =
-50, Peso = 750.25m, NumeroVenta = "25-000002", Legajo = "1002", NombreUsuario = "Maria Gomez", FechaRegistro =
-DateTime.Today, Descripcion = "" },
-        };
-
-        tarimasHoy = tarimas.Count(t => t.FechaRegistro.Date == DateTime.Today);
+        tarimas = await TarimaService.FilterTarimasAsync(
+            numeroProducto: filtros.NumeroProducto,
+            numeroTarima: filtros.NumeroTarima,
+            numeroUsuario: filtros.NumeroUsuario,
+            numeroVenta: filtros.NumeroVenta,
+            fechaRegistro: filtros.FechaRegistro,
+            legajo: filtros.Legajo,
+            nombreUsuario: filtros.NombreUsuario,
+            cantidadCajasMin: filtros.CantidadCajasMin,
+            pesoMin: filtros.PesoMin);
+        
+        tarimasHoy = await TarimaService.GetTarimasCountByDateAsync(DateTime.Today);
     }
 
     private void ToggleFiltros()
     {
         showFiltros = !showFiltros;
-    }
-
-    private void OnFilterChanged()
-    {
-        // Los filtros se actualizan automáticamente por el bind
     }
 
     private async Task AplicarFiltros()
@@ -322,44 +289,23 @@ DateTime.Today, Descripcion = "" },
         await CargarTarimas();
     }
 
-    private void LimpiarFiltros()
+    private async Task LimpiarFiltros()
     {
-        filtros = new TarimaFiltros();
+        filtros = new TarimaFiltros { FechaRegistro = DateTime.Today };
         showPrintFilters = false;
-        _ = CargarTarimas();
+        await CargarTarimas();
     }
 
-    private async Task VerTodas()
+    private async Task VerTarimasDeHoy()
     {
-        LimpiarFiltros();
-        // TODO: Cargar todas las tarimas (últimas 1000)
+        filtros = new TarimaFiltros { FechaRegistro = DateTime.Today };
+        showPrintFilters = false;
         await CargarTarimas();
     }
 
     private void Print()
     {
-        // En Blazor Server, usamos JSInterop para imprimir
-        // navigationManager.NavigateTo("/print", forceLoad: true);
-    }
-
-    private async Task Logout()
-    {
-        Navigation.NavigateTo("/auth/login", forceLoad: true);
-    }
-
-    public class TarimaViewModel
-    {
-        public int Id { get; set; }
-        public string NumeroProducto { get; set; } = "";
-        public string NumeroTarima { get; set; } = "";
-        public string NumeroUsuario { get; set; } = "";
-        public int CantidadCajas { get; set; }
-        public decimal Peso { get; set; }
-        public string NumeroVenta { get; set; } = "";
-        public string? Legajo { get; set; }
-        public string? NombreUsuario { get; set; }
-        public DateTime FechaRegistro { get; set; }
-        public string Descripcion { get; set; } = "";
+        JS.InvokeVoidAsync("window.print");
     }
 
     public class TarimaFiltros
@@ -375,10 +321,7 @@ DateTime.Today, Descripcion = "" },
 
         public string NumeroVenta { get; set; } = "";
         public DateTime? FechaRegistro { get; set; }
-
-        public int? LegajoInt { get; set; }
-        public string Legajo => LegajoInt?.ToString() ?? "";
-
+        public string Legajo { get; set; } = "";
         public string NombreUsuario { get; set; } = "";
         public int? CantidadCajasMin { get; set; }
         public decimal? PesoMin { get; set; }

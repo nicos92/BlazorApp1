@@ -174,3 +174,7 @@ F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.pdb
 F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.genruntimeconfig.cache
 F:\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\ref\BlazorApp1.dll
 C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.sourcelink.json
+C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.csproj.AssemblyReference.cache
+C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\bin\Debug\net10.0\Dapper.dll
+C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\bin\Debug\net10.0\MySqlConnector.dll
+C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.csproj.Up2Date

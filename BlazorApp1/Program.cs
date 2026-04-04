@@ -10,8 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Infrastructure - Repository (abstraction + implementation)
-builder.Services.AddScoped<ITarimaRepository, TarimaRepository>();
+// Infrastructure - Repository (MySQL implementation)
+builder.Services.AddScoped<ITarimaRepository, MySqlTarimaRepository>();
 
 // Application - Services
 builder.Services.AddScoped<ITarimaService, TarimaService>();

@@ -1,14 +1,16 @@
 @page "/tarimas/editar_tarima/{id:int}"
-@using System.Security.Claims
+@using BlazorApp1.Application.Services
 @using BlazorApp1.Components.Shared
-@using Microsoft.AspNetCore.Components.Authorization
-@using System.ComponentModel.DataAnnotations
+@using BlazorApp1.Models
+@using BlazorApp1.Services
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ITarimaService TarimaService
+@inject IBarcodeParserService BarcodeParser
+@inject ITarimaValidatorService TarimaValidator
+@inject IJSRuntime JS
+@rendermode InteractiveServer
 
 <PageTitle>Editar Tarima - Sistema de Tarimas</PageTitle>
-
-<FormHeader Title="Editar Tarima" Icon="fa-warehouse" OnLogout="Logout" />
 
 <div class="container my-5">
     <div class="row justify-content-center">
@@ -16,10 +18,10 @@
             <div class="form-card">
                 <h3 class="mb-4">Formulario de Edición de Tarima</h3>
 
-                @if (!string.IsNullOrEmpty(error))
+                @if (error != null)
                 {
                     <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                        @GetErrorMessage()
+                        <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
                         <button type="button" class="btn-close" @onclick="DismissAlert" aria-label="Close"></button>
                     </div>
                 }
@@ -32,64 +34,96 @@
                     </div>
                 }
 
-                @if (tarima != null)
+                @if (isLoading)
+                {
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                }
+                else if (tarima != null)
                 {
                     <EditForm Model="tarima" OnValidSubmit="HandleUpdate">
                         <DataAnnotationsValidator />
 
+                        <div class="d-flex mb-2 justify-content-start">
+                            <div>
+                                <a href="/tarimas" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver al Inventario
+                                </a>
+                            </div>
+                        </div>
+
                         <div class="input-group has-validation mb-3">
                             <span class="input-group-text"><i class="fas fa-barcode"></i></span>
-                            <InputNumber id="codigoBarras" class="form-control" @bind-Value="tarima.CodigoBarrasLong"
-                                         placeholder="Código de Barras" @oninput="OnCodigoBarrasChanged" />
+                            <input type="text" maxlength="30" id="codigoBarras"
+                                   class="form-control @(codigoBarrasError != null ? "is-invalid" : "")"
+                                   value="@tarima.CodigoBarrasLong" placeholder="Código de Barras"
+                                   @oninput="OnCodigoBarrasChanged" @ref="codigoBarrasInput" />
                             <ValidationMessage For="@(() => tarima.CodigoBarras)" />
                         </div>
+                        @if (codigoBarrasError != null)
+                        {
+                            <div class="text-danger mb-3">
+                                <i class="fas fa-exclamation-circle me-1"></i>@codigoBarrasError
+                            </div>
+                        }
 
-                        <div class="input-group has-validation mb-3">
-                            <span class="input-group-text"><i class="fas fa-tag"></i></span>
-                            <InputNumber id="numeroProducto" class="form-control" @bind-Value="tarima.NumeroProductoInt"
-                                         placeholder="Número de Producto" maxlength="6" />
-                            <ValidationMessage For="@(() => tarima.NumeroProducto)" />
-                        </div>
-
-                        <div class="input-group has-validation mb-3">
-                            <span class="input-group-text"><i class="fas fa-warehouse"></i></span>
-                            <InputNumber id="numeroTarima" class="form-control" @bind-Value="tarima.NumeroTarimaInt"
-                                         placeholder="Número de Tarima" maxlength="6" />
-                            <ValidationMessage For="@(() => tarima.NumeroTarima)" />
-                        </div>
-
-                        <div class="input-group has-validation mb-3">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            <InputNumber id="numeroUsuario" class="form-control" @bind-Value="tarima.NumeroUsuarioInt"
-                                         placeholder="Número de Usuario" maxlength="2" />
-                            <ValidationMessage For="@(() => tarima.NumeroUsuario)" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group has-validation mb-3">
+                                    <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                    <InputNumber id="numeroProducto" class="form-control" readonly
+                                                 @bind-Value="tarima.NumeroProductoInt" placeholder="Número de Producto" />
+                                    <ValidationMessage For="@(() => tarima.NumeroProducto)" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group has-validation mb-3">
+                                    <span class="input-group-text"><i class="fas fa-warehouse"></i></span>
+                                    <InputNumber id="numeroTarima" class="form-control" readonly
+                                                 @bind-Value="tarima.NumeroTarimaInt" placeholder="Número de Tarima" />
+                                    <ValidationMessage For="@(() => tarima.NumeroTarima)" />
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group has-validation mb-3">
-                                    <span class="input-group-text"><i class="fas fa-boxes"></i></span>
-                                    <InputNumber id="cantidadCajas" class="form-control" @bind-Value="tarima.CantidadCajas"
-                                                 placeholder="Cantidad de Cajas" min="1" max="999" />
-                                    <ValidationMessage For="@(() => tarima.CantidadCajas)" />
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <InputNumber id="numeroUsuario" class="form-control" readonly
+                                                 @bind-Value="tarima.NumeroUsuarioInt" placeholder="Número de Usuario" />
+                                    <ValidationMessage For="@(() => tarima.NumeroUsuario)" />
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="input-group has-validation mb-3">
+                                    <span class="input-group-text"><i class="fas fa-boxes"></i></span>
+                                    <InputNumber id="cantidadCajas" class="form-control" readonly
+                                                 @bind-Value="tarima.CantidadCajas" placeholder="Cantidad de Cajas" min="1"
+                                                 max="999" />
+                                    <ValidationMessage For="@(() => tarima.CantidadCajas)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group has-validation mb-3">
                                     <span class="input-group-text"><i class="fas fa-weight"></i></span>
-                                    <InputNumber id="peso" class="form-control" @bind-Value="tarima.Peso"
+                                    <InputNumber id="peso" class="form-control" readonly @bind-Value="tarima.Peso"
                                                  placeholder="Peso (kg)" min="0" max="9999.99" step="0.01" />
                                     <ValidationMessage For="@(() => tarima.Peso)" />
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group has-validation mb-3">
                                     <span class="input-group-text"><i class="fas fa-tags"></i></span>
-                                    <InputText id="numeroVenta" class="form-control" @bind-Value="tarima.NumeroVenta"
-                                               placeholder="XX-XXXXXX" pattern="\d{2}-\d{6}" @oninput="OnNumeroVentaChanged" />
+                                    <input type="text" id="numeroVenta" class="form-control" maxlength="9"
+                                           value="@numeroVentaValue" @oninput="OnNumeroVentaChanged" @ref="numeroVentaInput"
+                                           placeholder="XX-XXXXXX" />
                                     <ValidationMessage For="@(() => tarima.NumeroVenta)" />
                                 </div>
                             </div>
@@ -105,7 +139,8 @@
                             <a href="/tarimas" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Volver al Inventario
                             </a>
-                            <button type="submit" class="btn btn-submit btn-lg btn-focus-animation">
+                            <button type="submit" class="btn btn-submit btn-lg btn-focus-animation"
+                                    disabled="@(!isFormReady)">
                                 <i class="fas fa-save me-2"></i>Actualizar Tarima
                             </button>
                         </div>
@@ -131,134 +166,153 @@
 
     private TarimaModel? tarima;
     private string? error;
+    private string? errorMessage;
     private bool success = false;
-    private bool isAdmin;
+    private bool isLoading = true;
+    private string? codigoBarrasError;
+    private ElementReference codigoBarrasInput;
+    private ElementReference numeroVentaInput;
 
-    private string GetErrorMessage()
-    {
-        return error switch
-        {
-            "required_fields_missing" => "Los campos código de barras y número de tarima son obligatorios.",
-            "update_failed" => "Error al actualizar la tarima.",
-            "invalid_barcode" => "El código de barras no es válido.",
-            _ => "Error desconocido al actualizar la tarima."
-        };
-    }
+    private bool barcodeAutocompleted = false;
+    private bool isFormReady = false;
+    private string numeroVentaValue = "";
 
     private void DismissAlert()
     {
         error = null;
+        errorMessage = null;
         success = false;
     }
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        var tarimas = await TarimaService.GetAllTarimasAsync();
+        var existingTarima = tarimas.FirstOrDefault(t => t.Id == Id);
 
-        isAdmin = user.Identity?.IsAuthenticated == true &&
-                  (user.IsInRole("administrador") || user.IsInRole("jefe_produccion"));
-
-        if (!isAdmin)
+        if (existingTarima != null)
         {
-            Navigation.NavigateTo("/tarimas");
-            return;
+            tarima = new TarimaModel
+            {
+                Id = existingTarima.Id,
+                CodigoBarras = existingTarima.CodigoBarras,
+                NumeroProducto = existingTarima.NumeroProducto,
+                NumeroTarima = existingTarima.NumeroTarima,
+                NumeroUsuario = existingTarima.NumeroUsuario,
+                CantidadCajas = existingTarima.CantidadCajas,
+                Peso = existingTarima.Peso,
+                NumeroVenta = existingTarima.NumeroVenta,
+                Descripcion = existingTarima.Descripcion ?? string.Empty
+            };
+            numeroVentaValue = existingTarima.NumeroVenta;
+            
+            if (!string.IsNullOrEmpty(tarima.CodigoBarras) && tarima.CodigoBarras.Length == 30)
+            {
+                barcodeAutocompleted = true;
+                isFormReady = TarimaValidator.IsFormReady(true, null, tarima.CantidadCajas, numeroVentaValue);
+            }
         }
 
-        // TODO: Cargar tarima real desde un servicio
-        // tarima = await TarimaService.GetByIdAsync(Id);
-
-        // Datos de ejemplo
-        tarima = new TarimaModel
-        {
-            Id = Id,
-            CodigoBarras = "01234567890129998010010000000150050",
-            NumeroProducto = "123456",
-            NumeroTarima = "000001",
-            NumeroUsuario = "01",
-            CantidadCajas = 100,
-            Peso = 1500.50m,
-            NumeroVenta = "25-000001",
-            Descripcion = "Tarima de prueba"
-        };
+        isLoading = false;
     }
 
-    private void OnCodigoBarrasChanged()
+    private async Task OnCodigoBarrasChanged(ChangeEventArgs e)
     {
-        var value = tarima?.CodigoBarras ?? "";
+        if (tarima == null) return;
+        
+        var value = e.Value?.ToString() ?? string.Empty;
 
-        // Limitar a 30 dígitos
-        if (value.Length > 30)
+        if (value.Length >= 30)
         {
             value = value.Substring(0, 30);
-            tarima!.CodigoBarras = value;
+            tarima.CodigoBarras = value;
         }
 
-        // Auto-completar campos cuando el código de barras tiene 30 dígitos
         if (value.Length == 30)
         {
-            if (value[0] != '0' || value.Substring(13, 4) != "9998")
+            var validationError = BarcodeParserService.GetValidationError(value);
+            
+            if (validationError != null)
             {
+                codigoBarrasError = validationError;
+                barcodeAutocompleted = false;
+                isFormReady = false;
+                StateHasChanged();
                 return;
             }
 
-            tarima!.NumeroProducto = value.Substring(1, 6);
-            tarima.NumeroTarima = value.Substring(7, 6);
-            tarima.NumeroUsuario = value.Substring(19, 2);
-
-            var cantidadCajas = value.Substring(21, 3);
-            if (int.TryParse(cantidadCajas, out int cajas))
+            var parseResult = BarcodeParser.Parse(value);
+            
+            if (!parseResult.IsValid)
             {
-                tarima.CantidadCajas = cajas;
+                codigoBarrasError = parseResult.ErrorMessage;
+                barcodeAutocompleted = false;
+                isFormReady = false;
+                StateHasChanged();
+                return;
             }
 
-            var pesoStr = value.Substring(24, 6);
-            if (decimal.TryParse(pesoStr, out decimal peso))
-            {
-                tarima.Peso = peso / 100;
-            }
+            codigoBarrasError = null;
+            tarima.NumeroProducto = parseResult.NumeroProducto;
+            tarima.NumeroTarima = parseResult.NumeroTarima;
+            tarima.NumeroUsuario = parseResult.NumeroUsuario;
+            tarima.CantidadCajas = parseResult.CantidadCajas;
+            tarima.Peso = parseResult.Peso;
+            
+            numeroVentaValue = parseResult.NumeroVentaPrefijo;
+            tarima.NumeroVenta = numeroVentaValue;
 
-            var currentYear = DateTime.Now.Year.ToString().Substring(2);
-            tarima.NumeroVenta = $"{currentYear}-";
+            barcodeAutocompleted = true;
+            isFormReady = false;
+            StateHasChanged();
+            await numeroVentaInput.FocusAsync();
+        }
+        else
+        {
+            codigoBarrasError = null;
+            barcodeAutocompleted = false;
+            isFormReady = false;
+            numeroVentaValue = "";
+            StateHasChanged();
         }
     }
 
-    private void OnNumeroVentaChanged()
+    private void OnNumeroVentaChanged(ChangeEventArgs e)
     {
-        if (tarima?.NumeroVenta.Length > 9 == true)
+        numeroVentaValue = e.Value?.ToString() ?? "";
+        
+        if (numeroVentaValue.Length > 9)
         {
-            tarima.NumeroVenta = tarima.NumeroVenta.Substring(0, 9);
+            numeroVentaValue = numeroVentaValue.Substring(0, 9);
         }
+        
+        if (tarima != null)
+        {
+            tarima.NumeroVenta = numeroVentaValue;
+        }
+        
+        isFormReady = TarimaValidator.IsFormReady(
+            barcodeAutocompleted,
+            codigoBarrasError,
+            tarima?.CantidadCajas ?? 0,
+            numeroVentaValue);
+        
+        StateHasChanged();
     }
 
     private async Task HandleUpdate()
     {
         if (tarima == null) return;
 
-        // Validaciones
-        if (tarima.CodigoBarras.Length > 30)
+        var validationResult = TarimaValidator.ValidateForSubmit(tarima, tarima.CodigoBarras, numeroVentaValue);
+
+        if (!validationResult.IsValid)
         {
-            error = "required_fields_missing";
+            error = validationResult.ErrorCode;
+            errorMessage = validationResult.ErrorMessage;
             return;
         }
 
-        if (tarima.CodigoBarras.Length == 30)
-        {
-            if (tarima.CodigoBarras[0] != '0')
-            {
-                error = "invalid_barcode";
-                return;
-            }
-
-            if (tarima.CodigoBarras.Substring(13, 4) != "9998")
-            {
-                error = "invalid_barcode";
-                return;
-            }
-        }
-
-        // TODO: Actualizar tarima en la base de datos
-        // await TarimaService.UpdateAsync(tarima);
+        tarima.NumeroVenta = numeroVentaValue;
 
         await Task.Delay(500);
 
@@ -266,66 +320,5 @@
 
         await Task.Delay(2000);
         Navigation.NavigateTo("/tarimas");
-    }
-
-    private async Task Logout()
-    {
-        Navigation.NavigateTo("/auth/login", forceLoad: true);
-    }
-
-    public class TarimaModel
-    {
-        public int Id { get; set; }
-
-        public string CodigoBarras { get; set; } = "";
-
-        public long? CodigoBarrasLong
-        {
-            get => long.TryParse(CodigoBarras, out var result) ? result : null;
-            set => CodigoBarras = value?.ToString() ?? "";
-        }
-
-        [Required(ErrorMessage = "El número de producto es requerido")]
-        [MaxLength(6, ErrorMessage = "Máximo 6 dígitos")]
-        public string NumeroProducto { get; set; } = "";
-
-        public int? NumeroProductoInt
-        {
-            get => int.TryParse(NumeroProducto, out var result) ? result : null;
-            set => NumeroProducto = value?.ToString() ?? "";
-        }
-
-        [Required(ErrorMessage = "El número de tarima es requerido")]
-        [MaxLength(6, ErrorMessage = "Máximo 6 dígitos")]
-        public string NumeroTarima { get; set; } = "";
-
-        public int? NumeroTarimaInt
-        {
-            get => int.TryParse(NumeroTarima, out var result) ? result : null;
-            set => NumeroTarima = value?.ToString() ?? "";
-        }
-
-        [Required(ErrorMessage = "El número de usuario es requerido")]
-        [MaxLength(2, ErrorMessage = "Máximo 2 dígitos")]
-        public string NumeroUsuario { get; set; } = "";
-
-        public int? NumeroUsuarioInt
-        {
-            get => int.TryParse(NumeroUsuario, out var result) ? result : null;
-            set => NumeroUsuario = value?.ToString() ?? "";
-        }
-
-        [Required(ErrorMessage = "La cantidad de cajas es requerida")]
-        [Range(1, 999, ErrorMessage = "La cantidad debe ser entre 1 y 999")]
-        public int CantidadCajas { get; set; }
-
-        [Range(0, 9999.99, ErrorMessage = "El peso debe ser entre 0 y 9999.99")]
-        public decimal Peso { get; set; }
-
-        [Required(ErrorMessage = "El número de venta es requerido")]
-        [RegularExpression(@"^\d{2}-\d{6}$", ErrorMessage = "El formato debe ser XX-XXXXXX")]
-        public string NumeroVenta { get; set; } = "";
-
-        public string Descripcion { get; set; } = "";
     }
 }

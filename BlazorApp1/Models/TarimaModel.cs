@@ -4,6 +4,8 @@ namespace BlazorApp1.Models;
 
 public class TarimaModel
 {
+    public int Id { get; set; }
+    
     public string CodigoBarras { get; set; } = "";
 
     public long? CodigoBarrasLong
