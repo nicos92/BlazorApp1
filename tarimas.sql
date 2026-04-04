@@ -235,7 +235,7 @@ CREATE TABLE roles
                     INSERT INTO usuarios
                         (username, email, password, first_name, last_name, legajo, department, id_rol, activo)
                     VALUES
-                        ('admin', 'admin@empresa.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', '001', 'Administración', 1, 1);
+                        ('admin', 'admin@empresa.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJ0x.lxq8Lx2y', 'Admin', 'User', '001', 'Administración', 1, 1);
 
                     -- Insertar una tarima de ejemplo
                     INSERT INTO tarimas

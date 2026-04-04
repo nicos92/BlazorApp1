@@ -178,3 +178,4 @@ C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\Blazor
 C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\bin\Debug\net10.0\Dapper.dll
 C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\bin\Debug\net10.0\MySqlConnector.dll
 C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\obj\Debug\net10.0\BlazorApp1.csproj.Up2Date
+C:\Users\nicos92\Documents\blazor\BlazorApp1\BlazorApp1\bin\Debug\net10.0\BCrypt.Net-Next.dll

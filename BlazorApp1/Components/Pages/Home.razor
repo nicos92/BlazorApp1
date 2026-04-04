@@ -1,10 +1,9 @@
-﻿@page "/"
+@page "/"
+@inject NavigationManager Navigation
 
-<div class="container-fluid" style="min-height: 100dvh;">
-
-    <PageTitle>Home</PageTitle>
-
-    <h1>Hello, world!</h1>
-
-    Welcome to your new app.
-</div>
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/auth/login", forceLoad: true);
+    }
+}

@@ -3,6 +3,7 @@ using BlazorApp1.Application.Services;
 using BlazorApp1.Components;
 using BlazorApp1.Infrastructure.Persistence;
 using BlazorApp1.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +11,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Authentication
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthenticationStateProvider>());
+
 // Infrastructure - Repository (MySQL implementation)
 builder.Services.AddScoped<ITarimaRepository, MySqlTarimaRepository>();
+builder.Services.AddScoped<IUsuarioRepository, MySqlUsuarioRepository>();
 
 // Application - Services
 builder.Services.AddScoped<ITarimaService, TarimaService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Presentation - Validators and Parsers
 builder.Services.AddScoped<IBarcodeParserService, BarcodeParserService>();
