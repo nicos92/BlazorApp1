@@ -2,11 +2,8 @@
 @using BlazorApp1.Application.Services
 @using BlazorApp1.Components.Shared
 @using BlazorApp1.Models
-@using BlazorApp1.Services
 @inject NavigationManager Navigation
 @inject ITarimaService TarimaService
-@inject IBarcodeParserService BarcodeParser
-@inject ITarimaValidatorService TarimaValidator
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -57,19 +54,9 @@
 
                         <div class="input-group has-validation mb-3">
                             <span class="input-group-text"><i class="fas fa-barcode"></i></span>
-                            <input type="text" maxlength="30" id="codigoBarras"
-                                   class="form-control @(codigoBarrasError != null ? "is-invalid" : "")"
-                                   value="@tarima.CodigoBarrasLong" placeholder="Código de Barras"
-                                   @oninput="OnCodigoBarrasChanged" @ref="codigoBarrasInput" />
-                            <ValidationMessage For="@(() => tarima.CodigoBarras)" />
+                            <input type="text" maxlength="30" id="codigoBarras" class="form-control" readonly
+                                   value="@tarima.CodigoBarras" placeholder="Código de Barras" />
                         </div>
-                        @if (codigoBarrasError != null)
-                        {
-                            <div class="text-danger mb-3">
-                                <i class="fas fa-exclamation-circle me-1"></i>@codigoBarrasError
-                            </div>
-                        }
-
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group has-validation mb-3">
@@ -124,8 +111,8 @@
                                     <input type="text" id="numeroVenta" class="form-control" maxlength="9"
                                            value="@numeroVentaValue" @oninput="OnNumeroVentaChanged" @ref="numeroVentaInput"
                                            placeholder="XX-XXXXXX" />
-                                    <ValidationMessage For="@(() => tarima.NumeroVenta)" />
                                 </div>
+                                <ValidationMessage For="@(() => tarima.NumeroVenta)" />
                             </div>
                         </div>
 
@@ -169,11 +156,8 @@
     private string? errorMessage;
     private bool success = false;
     private bool isLoading = true;
-    private string? codigoBarrasError;
-    private ElementReference codigoBarrasInput;
     private ElementReference numeroVentaInput;
 
-    private bool barcodeAutocompleted = false;
     private bool isFormReady = false;
     private string numeroVentaValue = "";
 
@@ -204,80 +188,17 @@
                 Descripcion = existingTarima.Descripcion ?? string.Empty
             };
             numeroVentaValue = existingTarima.NumeroVenta;
-            
-            if (!string.IsNullOrEmpty(tarima.CodigoBarras) && tarima.CodigoBarras.Length == 30)
-            {
-                barcodeAutocompleted = true;
-                isFormReady = TarimaValidator.IsFormReady(true, null, tarima.CantidadCajas, numeroVentaValue);
-            }
+            isFormReady = true;
         }
 
         isLoading = false;
     }
 
-    private async Task OnCodigoBarrasChanged(ChangeEventArgs e)
-    {
-        if (tarima == null) return;
-        
-        var value = e.Value?.ToString() ?? string.Empty;
-
-        if (value.Length >= 30)
-        {
-            value = value.Substring(0, 30);
-            tarima.CodigoBarras = value;
-        }
-
-        if (value.Length == 30)
-        {
-            var validationError = BarcodeParserService.GetValidationError(value);
-            
-            if (validationError != null)
-            {
-                codigoBarrasError = validationError;
-                barcodeAutocompleted = false;
-                isFormReady = false;
-                StateHasChanged();
-                return;
-            }
-
-            var parseResult = BarcodeParser.Parse(value);
-            
-            if (!parseResult.IsValid)
-            {
-                codigoBarrasError = parseResult.ErrorMessage;
-                barcodeAutocompleted = false;
-                isFormReady = false;
-                StateHasChanged();
-                return;
-            }
-
-            codigoBarrasError = null;
-            tarima.NumeroProducto = parseResult.NumeroProducto;
-            tarima.NumeroTarima = parseResult.NumeroTarima;
-            tarima.NumeroUsuario = parseResult.NumeroUsuario;
-            tarima.CantidadCajas = parseResult.CantidadCajas;
-            tarima.Peso = parseResult.Peso;
-            
-            numeroVentaValue = parseResult.NumeroVentaPrefijo;
-            tarima.NumeroVenta = numeroVentaValue;
-
-            barcodeAutocompleted = true;
-            isFormReady = false;
-            StateHasChanged();
-            await numeroVentaInput.FocusAsync();
-        }
-        else
-        {
-            codigoBarrasError = null;
-            barcodeAutocompleted = false;
-            isFormReady = false;
-            numeroVentaValue = "";
-            StateHasChanged();
-        }
-    }
-
     private void OnNumeroVentaChanged(ChangeEventArgs e)
     {
+        error = null;
+        errorMessage = null;
+        
         numeroVentaValue = e.Value?.ToString() ?? "";
         
         if (numeroVentaValue.Length > 9)
@@ -290,11 +211,7 @@
             tarima.NumeroVenta = numeroVentaValue;
         }
         
-        isFormReady = TarimaValidator.IsFormReady(
-            barcodeAutocompleted,
-            codigoBarrasError,
-            tarima?.CantidadCajas ?? 0,
-            numeroVentaValue);
+        isFormReady = !string.IsNullOrEmpty(numeroVentaValue);
         
         StateHasChanged();
     }
@@ -303,22 +220,41 @@
     {
         if (tarima == null) return;
 
-        var validationResult = TarimaValidator.ValidateForSubmit(tarima, tarima.CodigoBarras, numeroVentaValue);
-
-        if (!validationResult.IsValid)
+        if (string.IsNullOrWhiteSpace(numeroVentaValue))
         {
-            error = validationResult.ErrorCode;
-            errorMessage = validationResult.ErrorMessage;
+            error = "validation_error";
+            errorMessage = "El número de venta es requerido.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(numeroVentaValue, @"^\d{2}-\d{6}$"))
+        {
+            error = "validation_error";
+            errorMessage = "El formato del número de venta debe ser XX-XXXXXX.";
             return;
         }
 
         tarima.NumeroVenta = numeroVentaValue;
 
-        await Task.Delay(500);
+        var updated = await TarimaService.UpdateTarimaAsync(tarima);
+
+        if (!updated)
+        {
+            error = "update_failed";
+            errorMessage = "Error al actualizar la tarima. Intente nuevamente.";
+            return;
+        }
 
         success = true;
+        StateHasChanged();
 
-        await Task.Delay(2000);
-        Navigation.NavigateTo("/tarimas");
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            await InvokeAsync(() =>
+            {
+                Navigation.NavigateTo("/tarimas");
+            });
+        });
     }
 }

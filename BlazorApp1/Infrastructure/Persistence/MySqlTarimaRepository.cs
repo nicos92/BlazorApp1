@@ -39,6 +39,13 @@ public class MySqlTarimaRepository : ITarimaRepository
         return await connection.QueryAsync<Tarima>(sql);
     }
 
+    public async Task<int> GetCountAsync()
+    {
+        using var connection = CreateConnection();
+        const string sql = "SELECT COUNT(*) FROM tarimas";
+        return await connection.ExecuteScalarAsync<int>(sql);
+    }
+
     public async Task<IEnumerable<Tarima>> GetByDateAsync(DateTime fecha)
     {
         using var connection = CreateConnection();

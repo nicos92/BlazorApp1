@@ -1,9 +1,11 @@
 @page "/dashboard"
 @using System.Security.Claims
+@using BlazorApp1.Application.Services
 @using BlazorApp1.Components.Shared
 @using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ITarimaService TarimaService
 
 <PageTitle>Dashboard - Sistema de Tarimas</PageTitle>
 
@@ -180,9 +182,8 @@
             isAdmin = user.IsInRole("administrador");
         }
 
-        // TODO: Cargar estadísticas reales desde un servicio
-        totalTarimas = 1250;
-        totalUsuarios = 45;
+        totalTarimas = await TarimaService.GetTarimasCountAsync();
+        totalUsuarios = 0;
     }
 
     private void DismissAlert()

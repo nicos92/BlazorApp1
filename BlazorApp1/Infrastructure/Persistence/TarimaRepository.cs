@@ -13,6 +13,11 @@ public class TarimaRepository : ITarimaRepository
         return Task.FromResult<IEnumerable<Tarima>>(_tarimas.OrderByDescending(t => t.FechaCreacion));
     }
 
+    public Task<int> GetCountAsync()
+    {
+        return Task.FromResult(_tarimas.Count);
+    }
+
     public Task<IEnumerable<Tarima>> GetByDateAsync(DateTime fecha)
     {
         var result = _tarimas.Where(t => t.FechaCreacion.Date == fecha.Date).OrderByDescending(t => t.FechaCreacion);

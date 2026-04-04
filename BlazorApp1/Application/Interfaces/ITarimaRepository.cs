@@ -5,6 +5,7 @@ namespace BlazorApp1.Application.Interfaces;
 public interface ITarimaRepository
 {
     Task<IEnumerable<Tarima>> GetAllAsync();
+    Task<int> GetCountAsync();
     Task<IEnumerable<Tarima>> GetByDateAsync(DateTime fecha);
     Task<IEnumerable<Tarima>> FilterTarimasAsync(
         string? numeroProducto = null,

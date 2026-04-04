@@ -7,7 +7,9 @@ namespace BlazorApp1.Application.Services;
 public interface ITarimaService
 {
     Task<bool> SaveTarimaAsync(TarimaModel model);
+    Task<bool> UpdateTarimaAsync(TarimaModel model);
     Task<IEnumerable<Tarima>> GetAllTarimasAsync();
+    Task<int> GetTarimasCountAsync();
     Task<IEnumerable<Tarima>> GetTarimasByDateAsync(DateTime date);
     Task<int> GetTarimasCountByDateAsync(DateTime date);
     Task<IEnumerable<Tarima>> FilterTarimasAsync(
@@ -65,9 +67,38 @@ public class TarimaService : ITarimaService
         return true;
     }
 
+    public async Task<bool> UpdateTarimaAsync(TarimaModel model)
+    {
+        if (model.Id == 0)
+        {
+            return false;
+        }
+
+        var tarima = new Tarima
+        {
+            Id = model.Id,
+            CodigoBarras = model.CodigoBarras,
+            NumeroProducto = model.NumeroProducto,
+            NumeroTarima = model.NumeroTarima,
+            NumeroUsuario = model.NumeroUsuario,
+            CantidadCajas = model.CantidadCajas,
+            Peso = model.Peso,
+            NumeroVenta = model.NumeroVenta,
+            Descripcion = model.Descripcion
+        };
+
+        await _repository.UpdateAsync(tarima);
+        return true;
+    }
+
     public async Task<IEnumerable<Tarima>> GetAllTarimasAsync()
     {
         return await _repository.GetAllAsync();
+    }
+
+    public async Task<int> GetTarimasCountAsync()
+    {
+        return await _repository.GetCountAsync();
     }
 
     public async Task<IEnumerable<Tarima>> GetTarimasByDateAsync(DateTime date)
